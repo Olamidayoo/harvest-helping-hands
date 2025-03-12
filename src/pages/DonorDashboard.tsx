@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Package, Clock, MapPin, Search, ChevronDown, Plus } from 'lucide-react';
@@ -65,6 +64,33 @@ const sampleDonations = [
   },
 ];
 
+// Helper functions for status display
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'bg-amber-100 text-amber-700 border-amber-200';
+    case 'accepted':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'completed':
+      return 'bg-green-100 text-green-700 border-green-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'Awaiting Volunteer';
+    case 'accepted':
+      return 'Pickup Scheduled';
+    case 'completed':
+      return 'Completed';
+    default:
+      return status;
+  }
+};
+
 const DonorDashboard = () => {
   const [activeTab, setActiveTab] = useState('active');
   const [showDonationForm, setShowDonationForm] = useState(false);
@@ -83,32 +109,6 @@ const DonorDashboard = () => {
   
   const activeDonations = filteredDonations.filter(donation => donation.status === 'pending' || donation.status === 'accepted');
   const completedDonations = filteredDonations.filter(donation => donation.status === 'completed');
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'accepted':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'completed':
-        return 'bg-green-100 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-  
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Awaiting Volunteer';
-      case 'accepted':
-        return 'Pickup Scheduled';
-      case 'completed':
-        return 'Completed';
-      default:
-        return status;
-    }
-  };
   
   return (
     <PageTransition>
