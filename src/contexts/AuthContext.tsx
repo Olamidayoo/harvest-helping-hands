@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, getCurrentUser } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
+import { useToast } from "@/components/ui/use-toast";
 
 type AuthContextType = {
   session: Session | null;
@@ -35,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRoleState] = useState<'donor' | 'volunteer' | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get initial session
@@ -42,9 +44,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       
-      // Get user role from local storage
-      const storedRole = localStorage.getItem('userRole') as 'donor' | 'volunteer' | null;
-      setUserRoleState(storedRole);
+      // Get user role from user metadata or local storage
+      if (session?.user) {
+        const userMetaRole = session.user.user_metadata?.role as 'donor' | 'volunteer' | null;
+        if (userMetaRole) {
+          setUserRoleState(userMetaRole);
+          localStorage.setItem('userRole', userMetaRole);
+        } else {
+          // Fallback to local storage
+          const storedRole = localStorage.getItem('userRole') as 'donor' | 'volunteer' | null;
+          setUserRoleState(storedRole);
+          
+          // Update metadata if we have a role in local storage but not in metadata
+          if (storedRole) {
+            supabase.auth.updateUser({
+              data: { role: storedRole }
+            }).catch(error => {
+              console.error("Error updating user metadata:", error);
+            });
+          }
+        }
+      } else {
+        // No active session, check local storage as fallback
+        const storedRole = localStorage.getItem('userRole') as 'donor' | 'volunteer' | null;
+        setUserRoleState(storedRole);
+      }
       
       setLoading(false);
     });
@@ -53,6 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const userMetaRole = session.user.user_metadata?.role as 'donor' | 'volunteer' | null;
+        if (userMetaRole) {
+          setUserRoleState(userMetaRole);
+          localStorage.setItem('userRole', userMetaRole);
+        }
+      }
+      
       setLoading(false);
     });
 
@@ -65,9 +98,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Store in user metadata if user is logged in
     if (user) {
-      await supabase.auth.updateUser({
-        data: { role }
-      });
+      try {
+        await supabase.auth.updateUser({
+          data: { role }
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error updating user role",
+          description: error.message || "Failed to update your role",
+          variant: "destructive"
+        });
+      }
     }
   };
 

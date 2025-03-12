@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, Clock, Package, Phone, Send } from 'lucide-react';
@@ -8,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { createDonation } from '@/lib/supabase';
 
 interface FormData {
   foodName: string;
@@ -33,6 +34,7 @@ const initialFormData: FormData = {
 
 const DonationForm = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,17 +45,56 @@ const DonationForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Not authenticated",
+        description: "You need to be logged in to make a donation.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      // Prepare donation data for Supabase
+      const donationData = {
+        donor_id: user.id,
+        food_name: formData.foodName,
+        description: formData.description,
+        quantity: formData.quantity,
+        location: formData.location,
+        expiry_date: formData.expiryDate || null,
+        available_time: formData.availableTime || null,
+        contact_name: formData.contactName,
+        contact_phone: formData.contactPhone,
+        status: 'pending',
+      };
+      
+      const { data, error } = await createDonation(donationData);
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Donation submitted!",
         description: "Volunteers will be notified of your generous donation.",
       });
+      
+      // Reset form
       setFormData(initialFormData);
-    }, 1500);
+      
+    } catch (error: any) {
+      toast({
+        title: "Submission failed",
+        description: error.message || "There was an error submitting your donation.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formFields = [

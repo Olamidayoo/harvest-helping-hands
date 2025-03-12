@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Package, Clock, MapPin, Search, ChevronDown, Plus } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,59 +11,9 @@ import DonationForm from '@/components/donor/DonationForm';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageTransition from '@/components/ui/page-transition';
-
-// Sample donation data
-const sampleDonations = [
-  {
-    id: '1',
-    foodName: 'Fresh Vegetables',
-    description: 'Assorted vegetables including carrots, potatoes, and tomatoes.',
-    quantity: '5 kg',
-    location: '123 Main St, City',
-    expiryDate: '2023-07-15',
-    availableTime: '14:00',
-    contactName: 'John Doe',
-    contactPhone: '555-1234',
-    status: 'pending',
-    createdAt: '2023-07-10T14:30:00',
-  },
-  {
-    id: '2',
-    foodName: 'Bread and Pastries',
-    description: 'Assorted bread and pastries from our bakery.',
-    quantity: '10 items',
-    location: '456 Oak St, City',
-    expiryDate: '2023-07-12',
-    availableTime: '18:00',
-    contactName: 'John Doe',
-    contactPhone: '555-1234',
-    status: 'accepted',
-    createdAt: '2023-07-09T10:15:00',
-    volunteer: {
-      name: 'Michael Chen',
-      phone: '555-5678',
-      pickupTime: '2023-07-12T18:00:00',
-    },
-  },
-  {
-    id: '3',
-    foodName: 'Canned Goods',
-    description: 'Assorted canned vegetables, fruits, and soups.',
-    quantity: '15 cans',
-    location: '789 Pine St, City',
-    expiryDate: '2023-12-31',
-    availableTime: '10:00',
-    contactName: 'John Doe',
-    contactPhone: '555-1234',
-    status: 'completed',
-    createdAt: '2023-07-05T09:00:00',
-    volunteer: {
-      name: 'Elena Rodriguez',
-      phone: '555-9012',
-      pickupTime: '2023-07-06T10:00:00',
-    },
-  },
-];
+import { useAuth } from '@/contexts/AuthContext';
+import { getDonationsByDonor } from '@/lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 // Helper functions for status display
 const getStatusColor = (status: string) => {
@@ -91,24 +42,98 @@ const getStatusText = (status: string) => {
   }
 };
 
+// Donation interface
+interface Donation {
+  id: string;
+  food_name: string;
+  description: string;
+  quantity: string;
+  location: string;
+  status: string;
+  created_at: string;
+  donor_id: string;
+  volunteer_id?: string;
+  expiry_date?: string;
+  available_time?: string;
+  contact_name: string;
+  contact_phone: string;
+}
+
 const DonorDashboard = () => {
+  const { user, userRole } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('active');
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const filteredDonations = sampleDonations.filter(donation => {
+  // Check if user is authenticated and has donor role
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to access the donor dashboard",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+    
+    if (userRole !== 'donor') {
+      toast({
+        title: "Access denied",
+        description: "This dashboard is only for donors",
+        variant: "destructive"
+      });
+      navigate('/');
+      return;
+    }
+    
+    // Fetch donations for this donor
+    const fetchDonations = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await getDonationsByDonor(user.id);
+        
+        if (error) {
+          throw error;
+        }
+        
+        setDonations(data || []);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching donations",
+          description: error.message || "Failed to load your donations",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDonations();
+  }, [user, userRole, navigate, toast]);
+  
+  const filteredDonations = donations.filter(donation => {
     if (searchQuery === '') return true;
     
     const searchLower = searchQuery.toLowerCase();
     return (
-      donation.foodName.toLowerCase().includes(searchLower) ||
+      donation.food_name.toLowerCase().includes(searchLower) ||
       donation.description.toLowerCase().includes(searchLower) ||
       donation.location.toLowerCase().includes(searchLower)
     );
   });
   
-  const activeDonations = filteredDonations.filter(donation => donation.status === 'pending' || donation.status === 'accepted');
-  const completedDonations = filteredDonations.filter(donation => donation.status === 'completed');
+  const activeDonations = filteredDonations.filter(donation => 
+    donation.status === 'pending' || donation.status === 'accepted'
+  );
+  
+  const completedDonations = filteredDonations.filter(donation => 
+    donation.status === 'completed'
+  );
   
   return (
     <PageTransition>
@@ -149,6 +174,7 @@ const DonorDashboard = () => {
                 defaultValue="active" 
                 className="w-full" 
                 onValueChange={setActiveTab}
+                value={activeTab}
               >
                 <TabsList className="glass">
                   <TabsTrigger value="active" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
@@ -173,7 +199,13 @@ const DonorDashboard = () => {
             </div>
             
             <TabsContent value="active" className="mt-0">
-              {activeDonations.length === 0 ? (
+              {isLoading ? (
+                <Card className="glass">
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <p className="text-harvest-charcoal/70">Loading donations...</p>
+                  </CardContent>
+                </Card>
+              ) : activeDonations.length === 0 ? (
                 <Card className="glass">
                   <CardContent className="flex flex-col items-center justify-center py-12">
                     <Package className="h-12 w-12 text-harvest-sage/50 mb-4" />
@@ -193,7 +225,13 @@ const DonorDashboard = () => {
             </TabsContent>
             
             <TabsContent value="completed" className="mt-0">
-              {completedDonations.length === 0 ? (
+              {isLoading ? (
+                <Card className="glass">
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <p className="text-harvest-charcoal/70">Loading donations...</p>
+                  </CardContent>
+                </Card>
+              ) : completedDonations.length === 0 ? (
                 <Card className="glass">
                   <CardContent className="flex flex-col items-center justify-center py-12">
                     <Package className="h-12 w-12 text-harvest-sage/50 mb-4" />
@@ -221,24 +259,11 @@ const DonorDashboard = () => {
 };
 
 interface DonationItemProps {
-  donation: {
-    id: string;
-    foodName: string;
-    description: string;
-    quantity: string;
-    location: string;
-    status: string;
-    createdAt: string;
-    volunteer?: {
-      name: string;
-      phone: string;
-      pickupTime: string;
-    };
-  };
+  donation: Donation;
 }
 
 const DonationItem: React.FC<DonationItemProps> = ({ donation }) => {
-  const formattedDate = new Date(donation.createdAt).toLocaleDateString('en-US', {
+  const formattedDate = new Date(donation.created_at).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -255,7 +280,7 @@ const DonationItem: React.FC<DonationItemProps> = ({ donation }) => {
         <CardContent className="p-0">
           <div className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-medium text-harvest-charcoal">{donation.foodName}</h3>
+              <h3 className="text-xl font-medium text-harvest-charcoal">{donation.food_name}</h3>
               <Badge className={`${getStatusColor(donation.status)}`}>
                 {getStatusText(donation.status)}
               </Badge>
@@ -274,11 +299,11 @@ const DonationItem: React.FC<DonationItemProps> = ({ donation }) => {
                 <span className="text-harvest-charcoal/80 line-clamp-1">{donation.location}</span>
               </div>
               
-              {donation.volunteer && (
+              {donation.volunteer_id && (
                 <div className="flex items-center text-sm">
                   <Clock className="w-4 h-4 text-harvest-sage mr-2" />
                   <span className="text-harvest-charcoal/80">
-                    Pickup by: {donation.volunteer.name}
+                    Pickup scheduled
                   </span>
                 </div>
               )}
