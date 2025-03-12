@@ -105,8 +105,11 @@
     @apply bg-white bg-opacity-70 backdrop-blur-md border border-white border-opacity-20 shadow-sm;
   }
   
-  .transition-all {
-    @apply transition-all duration-300 ease-in-out;
+  /* Fixed circular dependency by directly using the properties instead of @apply transition-all */
+  .transition-common {
+    transition-property: all;
+    transition-duration: 300ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 

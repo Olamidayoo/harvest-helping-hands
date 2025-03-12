@@ -15,21 +15,21 @@ const testimonials = [
     name: 'Sarah Johnson',
     role: 'Restaurant Owner',
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80',
-    content: 'Harvest has changed how we deal with surplus food. Now instead of throwing away extras, we know it's going directly to people who need it. The platform is incredibly easy to use!'
+    content: "Harvest has changed how we deal with surplus food. Now instead of throwing away extras, we know it's going directly to people who need it. The platform is incredibly easy to use!"
   },
   {
     id: '2',
     name: 'Michael Chen',
     role: 'Volunteer',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80',
-    content: 'Being a part of Harvest lets me make a real difference in my community. I've met amazing people and helped provide meals for those in need. The scheduling system makes it easy to volunteer when I have time.'
+    content: "Being a part of Harvest lets me make a real difference in my community. I've met amazing people and helped provide meals for those in need. The scheduling system makes it easy to volunteer when I have time."
   },
   {
     id: '3',
     name: 'Elena Rodriguez',
     role: 'Community Organizer',
     image: 'https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80',
-    content: 'Harvest creates a beautiful connection between donors and volunteers. Our community center has received fresh food that would have otherwise gone to waste. The impact on families has been incredible.'
+    content: "Harvest creates a beautiful connection between donors and volunteers. Our community center has received fresh food that would have otherwise gone to waste. The impact on families has been incredible."
   }
 ];
 
@@ -47,7 +47,7 @@ const features = [
   {
     icon: Clock,
     title: 'Real-time Updates',
-    description: 'Track the status of your donations and receive notifications when they're claimed.'
+    description: "Track the status of your donations and receive notifications when they're claimed."
   },
   {
     icon: Award,
