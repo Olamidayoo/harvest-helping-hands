@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: error.message,
           variant: "destructive"
         });
-        return { error };
+        return { error, data: undefined };
       }
 
       if (data && data.length > 0) {
@@ -185,14 +185,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
 
-      return { data };
+      return { data, error: null };
     } catch (error: any) {
       toast({
         title: "Error updating username",
         description: error.message || "Failed to update username",
         variant: "destructive"
       });
-      return { error };
+      return { error, data: undefined };
     }
   };
 
