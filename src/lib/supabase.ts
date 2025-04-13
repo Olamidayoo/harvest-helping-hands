@@ -1,11 +1,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize the Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Use the values from src/integrations/supabase/client.ts
+const SUPABASE_URL = "https://bydjqnetcjgzplbgbhne.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5ZGpxbmV0Y2pnenBsYmdiaG5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3ODI1MjksImV4cCI6MjA1NzM1ODUyOX0.nxVA0mEaQ1MOp-xvbJH5bcybAc1h0ZIlrJyRrWKwq9c";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Initialize a single supabase client
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // Auth helper functions
 export const signUp = async (email: string, password: string) => {
