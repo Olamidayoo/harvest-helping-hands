@@ -1,14 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, userRole, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +33,11 @@ const Navbar = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header 
@@ -48,12 +62,98 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-8 items-center">
             <NavLinks />
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="bg-harvest-sage/10 border-harvest-sage/20 text-harvest-sage hover:bg-harvest-sage/20"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    {userRole === 'donor' ? 'Donor' : 'Volunteer'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {userRole === 'donor' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/donor">Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {userRole === 'volunteer' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/volunteer">Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuItem 
+                    className="text-red-500 hover:text-red-600 cursor-pointer"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline"
+                  className="border-harvest-sage text-harvest-sage hover:bg-harvest-sage/10"
+                  asChild
+                >
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button 
+                  className="bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+                  asChild
+                >
+                  <Link to="/signup">Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </nav>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-3">
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-harvest-sage/10 border-harvest-sage/20 text-harvest-sage hover:bg-harvest-sage/20"
+                  >
+                    <User className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {userRole === 'donor' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/donor">Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {userRole === 'volunteer' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/volunteer">Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuItem 
+                    className="text-red-500 hover:text-red-600 cursor-pointer"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            
             <Button
               variant="ghost"
               size="icon"
@@ -81,6 +181,24 @@ const Navbar = () => {
         >
           <nav className="flex flex-col space-y-4">
             <NavLinks />
+            
+            {!user && (
+              <div className="flex flex-col space-y-2 pt-2 border-t border-harvest-sage/10">
+                <Button 
+                  variant="outline"
+                  className="w-full border-harvest-sage text-harvest-sage hover:bg-harvest-sage/10"
+                  asChild
+                >
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button 
+                  className="w-full bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+                  asChild
+                >
+                  <Link to="/signup">Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </nav>
         </motion.div>
       )}
@@ -90,13 +208,28 @@ const Navbar = () => {
 
 const NavLinks = () => {
   const location = useLocation();
+  const { user, userRole } = useAuth();
   
+  // Base links that everyone sees
   const links = [
     { name: 'Home', path: '/' },
-    { name: 'Donate', path: '/donor' },
-    { name: 'Volunteer', path: '/volunteer' },
     { name: 'About', path: '/about' },
   ];
+  
+  // Add role-specific links if user is logged in
+  if (user) {
+    if (userRole === 'donor') {
+      links.push({ name: 'Donate', path: '/donor' });
+    } else if (userRole === 'volunteer') {
+      links.push({ name: 'Volunteer', path: '/volunteer' });
+    }
+  } else {
+    // If user is not logged in, show both options
+    links.push(
+      { name: 'Donate', path: '/login?role=donor' },
+      { name: 'Volunteer', path: '/login?role=volunteer' }
+    );
+  }
 
   return (
     <>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Package, Clock, MapPin, Search, ChevronDown, Plus } from 'lucide-react';
@@ -15,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getDonationsByDonor } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
-// Helper functions for status display
+// Helper functions for status display - moved outside component scope to be accessible
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
@@ -59,205 +60,7 @@ interface Donation {
   contact_phone: string;
 }
 
-const DonorDashboard = () => {
-  const { user, userRole } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('active');
-  const [showDonationForm, setShowDonationForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Check if user is authenticated and has donor role
-  useEffect(() => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please login to access the donor dashboard",
-        variant: "destructive"
-      });
-      navigate('/login');
-      return;
-    }
-    
-    if (userRole !== 'donor') {
-      toast({
-        title: "Access denied",
-        description: "This dashboard is only for donors",
-        variant: "destructive"
-      });
-      navigate('/');
-      return;
-    }
-    
-    // Fetch donations for this donor
-    const fetchDonations = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await getDonationsByDonor(user.id);
-        
-        if (error) {
-          throw error;
-        }
-        
-        setDonations(data || []);
-      } catch (error: any) {
-        toast({
-          title: "Error fetching donations",
-          description: error.message || "Failed to load your donations",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchDonations();
-  }, [user, userRole, navigate, toast]);
-  
-  const filteredDonations = donations.filter(donation => {
-    if (searchQuery === '') return true;
-    
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      donation.food_name.toLowerCase().includes(searchLower) ||
-      donation.description.toLowerCase().includes(searchLower) ||
-      donation.location.toLowerCase().includes(searchLower)
-    );
-  });
-  
-  const activeDonations = filteredDonations.filter(donation => 
-    donation.status === 'pending' || donation.status === 'accepted'
-  );
-  
-  const completedDonations = filteredDonations.filter(donation => 
-    donation.status === 'completed'
-  );
-  
-  return (
-    <PageTransition>
-      <Navbar />
-      
-      <main className="min-h-screen pt-24 pb-16 bg-harvest-cream/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-semibold text-harvest-charcoal">Donor Dashboard</h1>
-              <p className="text-harvest-charcoal/70 mt-1">Manage your food donations and track their status</p>
-            </div>
-            
-            <Button 
-              onClick={() => setShowDonationForm(!showDonationForm)}
-              className="mt-4 md:mt-0 bg-harvest-sage hover:bg-harvest-sage/90 text-white flex items-center gap-2"
-            >
-              {showDonationForm ? <ChevronDown className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {showDonationForm ? 'Hide Form' : 'New Donation'}
-            </Button>
-          </div>
-          
-          {showDonationForm && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-10"
-            >
-              <DonationForm />
-            </motion.div>
-          )}
-          
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <Tabs 
-                defaultValue="active" 
-                className="w-full" 
-                onValueChange={setActiveTab}
-                value={activeTab}
-              >
-                <TabsList className="glass">
-                  <TabsTrigger value="active" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
-                    Active Donations
-                  </TabsTrigger>
-                  <TabsTrigger value="completed" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
-                    Completed
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-harvest-charcoal/50 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search donations..."
-                  className="pl-10 border-harvest-sage/30 focus:border-harvest-sage glass"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <TabsContent value="active" className="mt-0">
-              {isLoading ? (
-                <Card className="glass">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <p className="text-harvest-charcoal/70">Loading donations...</p>
-                  </CardContent>
-                </Card>
-              ) : activeDonations.length === 0 ? (
-                <Card className="glass">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Package className="h-12 w-12 text-harvest-sage/50 mb-4" />
-                    <h3 className="text-xl font-medium text-harvest-charcoal mb-2">No active donations</h3>
-                    <p className="text-harvest-charcoal/70 text-center max-w-md">
-                      You don't have any active donations yet. Click the "New Donation" button to create one.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {activeDonations.map((donation) => (
-                    <DonationItem key={donation.id} donation={donation} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="completed" className="mt-0">
-              {isLoading ? (
-                <Card className="glass">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <p className="text-harvest-charcoal/70">Loading donations...</p>
-                  </CardContent>
-                </Card>
-              ) : completedDonations.length === 0 ? (
-                <Card className="glass">
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Package className="h-12 w-12 text-harvest-sage/50 mb-4" />
-                    <h3 className="text-xl font-medium text-harvest-charcoal mb-2">No completed donations</h3>
-                    <p className="text-harvest-charcoal/70 text-center max-w-md">
-                      You don't have any completed donations yet. They will appear here once volunteers have picked them up.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {completedDonations.map((donation) => (
-                    <DonationItem key={donation.id} donation={donation} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
-    </PageTransition>
-  );
-};
-
+// DonationItem component
 interface DonationItemProps {
   donation: Donation;
 }
@@ -316,6 +119,189 @@ const DonationItem: React.FC<DonationItemProps> = ({ donation }) => {
         </CardContent>
       </Card>
     </motion.div>
+  );
+};
+
+const DonorDashboard = () => {
+  const { user, userRole } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('active');
+  const [showDonationForm, setShowDonationForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Fetch donations for this donor
+  useEffect(() => {
+    const fetchDonations = async () => {
+      try {
+        setIsLoading(true);
+        
+        if (!user) return;
+        
+        const { data, error } = await getDonationsByDonor(user.id);
+        
+        if (error) {
+          throw error;
+        }
+        
+        setDonations(data || []);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching donations",
+          description: error.message || "Failed to load your donations",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDonations();
+  }, [user, toast]);
+  
+  const filteredDonations = donations.filter(donation => {
+    if (searchQuery === '') return true;
+    
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      donation.food_name.toLowerCase().includes(searchLower) ||
+      donation.description.toLowerCase().includes(searchLower) ||
+      donation.location.toLowerCase().includes(searchLower)
+    );
+  });
+  
+  const activeDonations = filteredDonations.filter(donation => 
+    donation.status === 'pending' || donation.status === 'accepted'
+  );
+  
+  const completedDonations = filteredDonations.filter(donation => 
+    donation.status === 'completed'
+  );
+  
+  return (
+    <PageTransition>
+      <Navbar />
+      
+      <main className="min-h-screen pt-24 pb-16 bg-harvest-cream/30">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-semibold text-harvest-charcoal">Donor Dashboard</h1>
+              <p className="text-harvest-charcoal/70 mt-1">Manage your food donations and track their status</p>
+            </div>
+            
+            <Button 
+              onClick={() => setShowDonationForm(!showDonationForm)}
+              className="mt-4 md:mt-0 bg-harvest-sage hover:bg-harvest-sage/90 text-white flex items-center gap-2"
+            >
+              {showDonationForm ? <ChevronDown className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {showDonationForm ? 'Hide Form' : 'New Donation'}
+            </Button>
+          </div>
+          
+          {showDonationForm && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mb-10"
+            >
+              <DonationForm />
+            </motion.div>
+          )}
+          
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <Tabs 
+                defaultValue="active"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="glass">
+                  <TabsTrigger value="active" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
+                    Active Donations
+                  </TabsTrigger>
+                  <TabsTrigger value="completed" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
+                    Completed
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="flex items-center justify-end mt-4 sm:mt-0">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-harvest-charcoal/50 h-4 w-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search donations..."
+                      className="pl-10 border-harvest-sage/30 focus:border-harvest-sage glass"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <TabsContent value="active" className="mt-6">
+                  {isLoading ? (
+                    <Card className="glass">
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <p className="text-harvest-charcoal/70">Loading donations...</p>
+                      </CardContent>
+                    </Card>
+                  ) : activeDonations.length === 0 ? (
+                    <Card className="glass">
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <Package className="h-12 w-12 text-harvest-sage/50 mb-4" />
+                        <h3 className="text-xl font-medium text-harvest-charcoal mb-2">No active donations</h3>
+                        <p className="text-harvest-charcoal/70 text-center max-w-md">
+                          You don't have any active donations yet. Click the "New Donation" button to create one.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {activeDonations.map((donation) => (
+                        <DonationItem key={donation.id} donation={donation} />
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="completed" className="mt-6">
+                  {isLoading ? (
+                    <Card className="glass">
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <p className="text-harvest-charcoal/70">Loading donations...</p>
+                      </CardContent>
+                    </Card>
+                  ) : completedDonations.length === 0 ? (
+                    <Card className="glass">
+                      <CardContent className="flex flex-col items-center justify-center py-12">
+                        <Package className="h-12 w-12 text-harvest-sage/50 mb-4" />
+                        <h3 className="text-xl font-medium text-harvest-charcoal mb-2">No completed donations</h3>
+                        <p className="text-harvest-charcoal/70 text-center max-w-md">
+                          You don't have any completed donations yet. They will appear here once volunteers have picked them up.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {completedDonations.map((donation) => (
+                        <DonationItem key={donation.id} donation={donation} />
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <Footer />
+    </PageTransition>
   );
 };
 
