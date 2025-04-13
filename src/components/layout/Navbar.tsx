@@ -2,21 +2,104 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import { Menu, X, LogOut, User, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuItem, 
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const UsernameDialog = () => {
+  const { profile, updateUsername } = useAuth();
+  const [username, setUsername] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setUsername(profile.username || '');
+    }
+  }, [profile]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    
+    try {
+      await updateUsername(username);
+      // Dialog will close automatically with DialogClose
+    } catch (error) {
+      console.error('Error updating username:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <Edit className="h-4 w-4 mr-2" />
+          Edit Username
+        </DropdownMenuItem>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Update Your Username</DialogTitle>
+          <DialogDescription>
+            Enter a new username to use across the platform.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input 
+              id="username" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              placeholder="Enter a username"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button 
+                type="submit" 
+                disabled={isUpdating || !username}
+                className="bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+              >
+                {isUpdating ? 'Updating...' : 'Save Changes'}
+              </Button>
+            </DialogClose>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,6 +121,9 @@ const Navbar = () => {
     await signOut();
     navigate('/');
   };
+
+  // Determine if we're on a dashboard page
+  const isOnDashboard = location.pathname === '/donor' || location.pathname === '/volunteer';
 
   return (
     <header 
@@ -63,7 +149,7 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8 items-center">
-            <NavLinks />
+            <NavLinks isOnDashboard={isOnDashboard} />
             
             {user ? (
               <DropdownMenu>
@@ -73,20 +159,28 @@ const Navbar = () => {
                     className="bg-harvest-sage/10 border-harvest-sage/20 text-harvest-sage hover:bg-harvest-sage/20"
                   >
                     <User className="h-4 w-4 mr-2" />
-                    {userRole === 'donor' ? 'Donor' : 'Volunteer'}
+                    {profile ? profile.username : (userRole === 'donor' ? 'Donor' : 'Volunteer')}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {userRole === 'donor' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/donor">Dashboard</Link>
-                    </DropdownMenuItem>
-                  )}
+                  <UsernameDialog />
+                  <DropdownMenuSeparator />
                   
-                  {userRole === 'volunteer' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/volunteer">Dashboard</Link>
-                    </DropdownMenuItem>
+                  {!isOnDashboard && (
+                    <>
+                      {userRole === 'donor' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/donor">Donor Dashboard</Link>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {userRole === 'volunteer' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/volunteer">Volunteer Dashboard</Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                    </>
                   )}
                   
                   <DropdownMenuItem 
@@ -131,16 +225,24 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {userRole === 'donor' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/donor">Dashboard</Link>
-                    </DropdownMenuItem>
-                  )}
+                  <UsernameDialog />
+                  <DropdownMenuSeparator />
                   
-                  {userRole === 'volunteer' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/volunteer">Dashboard</Link>
-                    </DropdownMenuItem>
+                  {!isOnDashboard && (
+                    <>
+                      {userRole === 'donor' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/donor">Donor Dashboard</Link>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {userRole === 'volunteer' && (
+                        <DropdownMenuItem asChild>
+                          <Link to="/volunteer">Volunteer Dashboard</Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                    </>
                   )}
                   
                   <DropdownMenuItem 
@@ -180,7 +282,7 @@ const Navbar = () => {
           className="md:hidden glass mt-2 px-4 py-5 mx-4 rounded-xl"
         >
           <nav className="flex flex-col space-y-4">
-            <NavLinks />
+            <NavLinks isOnDashboard={isOnDashboard} />
             
             {!user && (
               <div className="flex flex-col space-y-2 pt-2 border-t border-harvest-sage/10">
@@ -206,7 +308,7 @@ const Navbar = () => {
   );
 };
 
-const NavLinks = () => {
+const NavLinks = ({ isOnDashboard }: { isOnDashboard: boolean }) => {
   const location = useLocation();
   const { user, userRole } = useAuth();
   
@@ -216,19 +318,21 @@ const NavLinks = () => {
     { name: 'About', path: '/about' },
   ];
   
-  // Add role-specific links if user is logged in
-  if (user) {
-    if (userRole === 'donor') {
-      links.push({ name: 'Donate', path: '/donor' });
-    } else if (userRole === 'volunteer') {
-      links.push({ name: 'Volunteer', path: '/volunteer' });
+  // Only add role-specific links if user is not already on a dashboard
+  if (!isOnDashboard) {
+    if (user) {
+      if (userRole === 'donor') {
+        links.push({ name: 'Donate', path: '/donor' });
+      } else if (userRole === 'volunteer') {
+        links.push({ name: 'Volunteer', path: '/volunteer' });
+      }
+    } else {
+      // If user is not logged in, show both options
+      links.push(
+        { name: 'Donate', path: '/login?role=donor' },
+        { name: 'Volunteer', path: '/login?role=volunteer' }
+      );
     }
-  } else {
-    // If user is not logged in, show both options
-    links.push(
-      { name: 'Donate', path: '/login?role=donor' },
-      { name: 'Volunteer', path: '/login?role=volunteer' }
-    );
   }
 
   return (

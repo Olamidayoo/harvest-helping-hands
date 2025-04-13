@@ -4,9 +4,17 @@ import { supabase, getCurrentUser } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { useToast } from "@/components/ui/use-toast";
 
+type Profile = {
+  id: string;
+  username: string;
+  created_at: string;
+  updated_at: string;
+};
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
+  profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{
     error: any;
@@ -19,6 +27,10 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   userRole: 'donor' | 'volunteer' | null;
   setUserRole: (role: 'donor' | 'volunteer') => Promise<void>;
+  updateUsername: (username: string) => Promise<{
+    error: any;
+    data?: any;
+  }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,9 +46,32 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRoleState] = useState<'donor' | 'volunteer' | null>(null);
   const { toast } = useToast();
+
+  // Fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+      
+      if (data) {
+        setProfile(data as Profile);
+      }
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    }
+  };
 
   useEffect(() => {
     // Get initial session
@@ -64,6 +99,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           }
         }
+
+        // Fetch user profile
+        fetchUserProfile(session.user.id);
       } else {
         // No active session, check local storage as fallback
         const storedRole = localStorage.getItem('userRole') as 'donor' | 'volunteer' | null;
@@ -84,6 +122,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRoleState(userMetaRole);
           localStorage.setItem('userRole', userMetaRole);
         }
+        
+        // Fetch user profile on auth state change
+        fetchUserProfile(session.user.id);
+      } else {
+        // Clear profile when logged out
+        setProfile(null);
       }
       
       setLoading(false);
@@ -112,9 +156,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUsername = async (username: string) => {
+    if (!user) {
+      return { error: new Error('User not authenticated') };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ username, updated_at: new Date() })
+        .eq('id', user.id)
+        .select();
+
+      if (error) {
+        toast({
+          title: "Error updating username",
+          description: error.message,
+          variant: "destructive"
+        });
+        return { error };
+      }
+
+      if (data && data.length > 0) {
+        setProfile(data[0] as Profile);
+        toast({
+          title: "Username updated",
+          description: "Your username has been successfully updated"
+        });
+      }
+
+      return { data };
+    } catch (error: any) {
+      toast({
+        title: "Error updating username",
+        description: error.message || "Failed to update username",
+        variant: "destructive"
+      });
+      return { error };
+    }
+  };
+
   const value = {
     session,
     user,
+    profile,
     loading,
     signIn: async (email: string, password: string) => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -128,9 +213,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       localStorage.removeItem('userRole');
       setUserRoleState(null);
+      setProfile(null);
     },
     userRole,
     setUserRole,
+    updateUsername,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

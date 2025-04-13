@@ -47,13 +47,57 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
+// Route that redirects to dashboard if already logged in
+const RedirectIfAuthenticated = ({
+  children
+}: {
+  children: React.ReactNode
+}) => {
+  const { user, userRole, loading } = useAuth();
+  
+  // Show nothing while checking auth status
+  if (loading) {
+    return null;
+  }
+  
+  // Redirect to appropriate dashboard if authenticated
+  if (user && userRole) {
+    if (userRole === 'donor') {
+      return <Navigate to="/donor" replace />;
+    } else if (userRole === 'volunteer') {
+      return <Navigate to="/volunteer" replace />;
+    }
+  }
+  
+  // User is not authenticated, show the requested page
+  return <>{children}</>;
+};
+
 const AppRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        
+        {/* Auth routes with redirect if already logged in */}
+        <Route 
+          path="/login" 
+          element={
+            <RedirectIfAuthenticated>
+              <Login />
+            </RedirectIfAuthenticated>
+          }
+        />
+        
+        <Route 
+          path="/signup" 
+          element={
+            <RedirectIfAuthenticated>
+              <Signup />
+            </RedirectIfAuthenticated>
+          }
+        />
+        
         <Route path="/about" element={<About />} />
         
         {/* Protected donor route */}

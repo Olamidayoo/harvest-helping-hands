@@ -35,6 +35,27 @@ export const getCurrentUser = async () => {
   return data?.user;
 };
 
+// Profile operations
+export const getUserProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  
+  return { data, error };
+};
+
+export const updateUserProfile = async (userId: string, updates: any) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select();
+  
+  return { data, error };
+};
+
 // Database operations for donations
 export const getDonations = async () => {
   const { data, error } = await supabase
