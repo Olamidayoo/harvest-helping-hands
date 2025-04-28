@@ -19,6 +19,7 @@ const SignupForm = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<'donor' | 'volunteer'>('donor');
   const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,32 +33,48 @@ const SignupForm = () => {
       return;
     }
     
+    if (password.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(email, password);
+      console.log("Attempting signup with:", email);
+      const { error, data } = await signUp(email, password);
       
       if (error) {
+        console.error("Signup error:", error);
         toast({
           title: "Signup failed",
-          description: error.message,
+          description: error.message || "Could not create account",
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
       
+      console.log("Signup successful, setting role:", role);
       // Set user role
       await setUserRole(role);
       
       toast({
         title: "Signup successful",
-        description: "Please check your email for verification link",
+        description: "Your account has been created. Please check your email for verification if required.",
       });
       
       // Navigate to login
-      navigate('/login');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
       
     } catch (error: any) {
+      console.error("Signup exception:", error);
       toast({
         title: "Error",
         description: error.message || "An error occurred during signup",
@@ -96,6 +113,17 @@ const SignupForm = () => {
                 required
               />
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="username">Username (optional)</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Choose a username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
           </div>
           
           <div className="space-y-2">

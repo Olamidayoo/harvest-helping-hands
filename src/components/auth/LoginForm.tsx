@@ -24,17 +24,21 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
+      console.log("Attempting login with:", email);
+      const { data, error } = await signIn(email, password);
       
       if (error) {
+        console.error("Login error:", error);
         toast({
           title: "Login failed",
-          description: error.message,
+          description: error.message || "Invalid email or password",
           variant: "destructive"
         });
+        setIsLoading(false);
         return;
       }
       
+      console.log("Login successful, setting role:", role);
       // Set user role
       await setUserRole(role);
       
@@ -47,6 +51,7 @@ const LoginForm = () => {
       navigate(`/${role}`);
       
     } catch (error: any) {
+      console.error("Login exception:", error);
       toast({
         title: "Error",
         description: error.message || "An error occurred during login",

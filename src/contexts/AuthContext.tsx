@@ -28,7 +28,7 @@ type AuthContextType = {
   userRole: 'donor' | 'volunteer' | null;
   setUserRole: (role: 'donor' | 'volunteer') => Promise<void>;
   updateUsername: (username: string) => Promise<{
-    error: any;
+    error: any | null;
     data?: any;
   }>;
 };
@@ -74,8 +74,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session
+    // Set up auth state listener FIRST (to prevent missing auth events)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const userMetaRole = session.user.user_metadata?.role as 'donor' | 'volunteer' | null;
+        if (userMetaRole) {
+          setUserRoleState(userMetaRole);
+          localStorage.setItem('userRole', userMetaRole);
+        }
+        
+        // Fetch user profile on auth state change
+        fetchUserProfile(session.user.id);
+      } else {
+        // Clear profile when logged out
+        setProfile(null);
+      }
+      
+      setLoading(false);
+    });
+
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -111,28 +135,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const userMetaRole = session.user.user_metadata?.role as 'donor' | 'volunteer' | null;
-        if (userMetaRole) {
-          setUserRoleState(userMetaRole);
-          localStorage.setItem('userRole', userMetaRole);
-        }
-        
-        // Fetch user profile on auth state change
-        fetchUserProfile(session.user.id);
-      } else {
-        // Clear profile when logged out
-        setProfile(null);
-      }
-      
-      setLoading(false);
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 
@@ -158,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUsername = async (username: string) => {
     if (!user) {
-      return { error: new Error('User not authenticated') };
+      return { error: new Error('User not authenticated'), data: undefined };
     }
 
     try {
@@ -196,19 +198,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      console.log("Signing in with:", email);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log("Sign in result:", data?.user?.id, error);
+      
+      if (error) return { error, data: undefined };
+      return { data, error: null };
+    } catch (error) {
+      console.error("Error in signIn function:", error);
+      return { error, data: undefined };
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    try {
+      console.log("Signing up with:", email);
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + '/login'
+        }
+      });
+      console.log("Sign up result:", data?.user?.id, error);
+      
+      if (error) return { error, data: undefined };
+      return { data, error: null };
+    } catch (error) {
+      console.error("Error in signUp function:", error);
+      return { error, data: undefined };
+    }
+  };
+
   const value = {
     session,
     user,
     profile,
     loading,
-    signIn: async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      return { data, error };
-    },
-    signUp: async (email: string, password: string) => {
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      return { data, error };
-    },
+    signIn,
+    signUp,
     signOut: async () => {
       await supabase.auth.signOut();
       localStorage.removeItem('userRole');
