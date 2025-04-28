@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use the values from src/integrations/supabase/client.ts
@@ -7,6 +6,18 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // Initialize a single supabase client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Enable real-time updates for donations table
+supabase
+  .channel('public:donations')
+  .on('postgres_changes', {
+    event: '*',
+    schema: 'public',
+    table: 'donations'
+  }, (payload) => {
+    console.log('Change received!', payload);
+  })
+  .subscribe();
 
 // Auth helper functions
 export const signUp = async (email: string, password: string) => {

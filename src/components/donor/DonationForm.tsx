@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, Clock, Package, Phone, Send, Image } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,41 +11,44 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { createDonation } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-interface FormData {
-  foodName: string;
-  description: string;
-  quantity: string;
-  location: string;
-  expiryDate: string;
-  availableTime: string;
-  contactName: string;
-  contactPhone: string;
-}
+const donationSchema = z.object({
+  foodName: z.string().min(1, 'Food name is required'),
+  description: z.string().min(1, 'Description is required'),
+  quantity: z.string().min(1, 'Quantity is required'),
+  location: z.string().min(1, 'Location is required'),
+  expiryDate: z.string().optional(),
+  availableTime: z.string().optional(),
+  contactName: z.string().min(1, 'Contact name is required'),
+  contactPhone: z.string().min(1, 'Contact phone is required')
+});
 
-const initialFormData: FormData = {
-  foodName: '',
-  description: '',
-  quantity: '',
-  location: '',
-  expiryDate: '',
-  availableTime: '',
-  contactName: '',
-  contactPhone: ''
-};
+type FormData = z.infer<typeof donationSchema>;
 
 const DonationForm = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const form = useForm<FormData>({
+    resolver: zodResolver(donationSchema),
+    defaultValues: {
+      foodName: '',
+      description: '',
+      quantity: '',
+      location: '',
+      expiryDate: '',
+      availableTime: '',
+      contactName: '',
+      contactPhone: ''
+    }
+  });
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,9 +66,7 @@ const DonationForm = () => {
     setImageFile(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const onSubmit = async (data: FormData) => {
     if (!user) {
       toast({
         title: "Not authenticated",
@@ -91,28 +93,28 @@ const DonationForm = () => {
           
         if (uploadError) throw uploadError;
         
-        const { data } = supabase.storage
+        const { data: urlData } = supabase.storage
           .from('donations')
           .getPublicUrl(filePath);
           
-        imageUrl = data.publicUrl;
+        imageUrl = urlData.publicUrl;
       }
       
       const donationData = {
         donor_id: user.id,
-        food_name: formData.foodName,
-        description: formData.description,
-        quantity: formData.quantity,
-        location: formData.location,
-        expiry_date: formData.expiryDate || null,
-        available_time: formData.availableTime || null,
-        contact_name: formData.contactName,
-        contact_phone: formData.contactPhone,
+        food_name: data.foodName,
+        description: data.description,
+        quantity: data.quantity,
+        location: data.location,
+        expiry_date: data.expiryDate || null,
+        available_time: data.availableTime || null,
+        contact_name: data.contactName,
+        contact_phone: data.contactPhone,
         status: 'pending',
         image_url: imageUrl
       };
       
-      const { data, error } = await createDonation(donationData);
+      const { error } = await createDonation(donationData);
       
       if (error) throw error;
       
@@ -121,7 +123,7 @@ const DonationForm = () => {
         description: "Volunteers will be notified of your generous donation.",
       });
       
-      setFormData(initialFormData);
+      form.reset();
       setImageFile(null);
       
     } catch (error: any) {
@@ -136,102 +138,189 @@ const DonationForm = () => {
     }
   };
 
-  const formFields = [
-    { name: 'foodName', label: 'Food Name', placeholder: 'e.g., Fresh Vegetables', icon: Package, type: 'text' },
-    { name: 'description', label: 'Description', placeholder: 'Briefly describe the food items', icon: null, type: 'textarea' },
-    { name: 'quantity', label: 'Quantity', placeholder: 'e.g., 5 kg or 3 meals', icon: Package, type: 'text' },
-    { name: 'location', label: 'Pickup Location', placeholder: 'Full address', icon: MapPin, type: 'text' },
-    { name: 'expiryDate', label: 'Expiry Date (if applicable)', placeholder: '', icon: Calendar, type: 'date' },
-    { name: 'availableTime', label: 'Available Pickup Time', placeholder: '', icon: Clock, type: 'time' },
-    { name: 'contactName', label: 'Contact Name', placeholder: 'Your name', icon: null, type: 'text' },
-    { name: 'contactPhone', label: 'Contact Phone', placeholder: 'Your phone number', icon: Phone, type: 'tel' },
-  ];
-  
   return (
     <Card className="w-full max-w-2xl mx-auto glass">
       <CardContent className="pt-6">
-        <motion.form 
-          onSubmit={handleSubmit}
-          className="space-y-6"
+        <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <h2 className="text-2xl font-semibold text-harvest-charcoal mb-4">Donate Food</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {formFields.map((field) => (
-              <div key={field.name} className={field.name === 'description' ? 'md:col-span-2' : ''}>
-                <Label htmlFor={field.name} className="block text-sm font-medium text-harvest-charcoal mb-1">
-                  {field.label}
-                </Label>
-                <div className="relative">
-                  {field.type === 'textarea' ? (
-                    <Textarea
-                      id={field.name}
-                      name={field.name}
-                      value={formData[field.name as keyof FormData]}
-                      onChange={handleChange}
-                      placeholder={field.placeholder}
-                      className="w-full pl-3 pr-3 py-2 rounded-md border-harvest-sage border-opacity-30 focus:border-harvest-sage focus:ring focus:ring-harvest-sage focus:ring-opacity-30"
-                      rows={3}
-                    />
-                  ) : (
-                    <div className="flex items-center">
-                      {field.icon && <field.icon className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />}
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        type={field.type}
-                        value={formData[field.name as keyof FormData]}
-                        onChange={handleChange}
-                        placeholder={field.placeholder}
-                        className={`w-full ${field.icon ? 'pl-10' : 'pl-3'} pr-3 py-2 rounded-md border-harvest-sage border-opacity-30 focus:border-harvest-sage focus:ring focus:ring-harvest-sage focus:ring-opacity-30`}
-                      />
-                    </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <h2 className="text-2xl font-semibold text-harvest-charcoal mb-4">Donate Food</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="foodName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Food Name</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Package className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          <Input {...field} className="pl-10" placeholder="e.g., Fresh Vegetables" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Package className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          <Input {...field} className="pl-10" placeholder="e.g., 5 kg or 3 meals" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea {...field} placeholder="Briefly describe the food items" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pickup Location</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <MapPin className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          <Input {...field} className="pl-10" placeholder="Full address" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="expiryDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expiry Date (if applicable)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Calendar className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          <Input {...field} type="date" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="availableTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Available Pickup Time</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Clock className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          <Input {...field} type="time" className="pl-10" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contactName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Your name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contactPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Phone</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Phone className="w-4 h-4 text-harvest-sage absolute left-3 top-1/2 transform -translate-y-1/2" />
+                          <Input {...field} type="tel" className="pl-10" placeholder="Your phone number" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="image">Food Image (Optional)</Label>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="w-full"
+                  />
+                  {imageFile && (
+                    <Image className="h-6 w-6 text-harvest-sage" />
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="image">Food Image (Optional)</Label>
-            <div className="flex items-center space-x-2">
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="w-full"
-              />
-              {imageFile && (
-                <Image className="h-6 w-6 text-harvest-sage" />
-              )}
-            </div>
-          </div>
-          
-          <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="group relative overflow-hidden bg-harvest-sage hover:bg-harvest-sage/90 text-white px-6 py-2 rounded-md shadow-sm transition-all duration-300"
-            >
-              <motion.span
-                initial={{ x: 0 }}
-                animate={isSubmitting ? { x: -40 } : { x: 0 }}
-                className="flex items-center gap-2"
-              >
-                {isSubmitting ? 'Submitting...' : (
-                  <>
-                    <span>Submit Donation</span>
-                    <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </motion.span>
-            </Button>
-          </div>
-        </motion.form>
+              
+              <div className="flex justify-end">
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="group relative overflow-hidden bg-harvest-sage hover:bg-harvest-sage/90 text-white px-6 py-2 rounded-md shadow-sm transition-all duration-300"
+                >
+                  <motion.span
+                    initial={{ x: 0 }}
+                    animate={isSubmitting ? { x: -40 } : { x: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    {isSubmitting ? 'Submitting...' : (
+                      <>
+                        <span>Submit Donation</span>
+                        <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </motion.span>
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </motion.div>
       </CardContent>
     </Card>
   );
