@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Clock, Package, Phone, Send } from 'lucide-react';
+import { MapPin, Calendar, Clock, Package, Phone, Send, Image } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { createDonation } from '@/lib/supabase';
-import { Image, Upload } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface FormData {
   foodName: string;
@@ -98,7 +98,6 @@ const DonationForm = () => {
         imageUrl = data.publicUrl;
       }
       
-      // Prepare donation data for Supabase
       const donationData = {
         donor_id: user.id,
         food_name: formData.foodName,
@@ -122,7 +121,6 @@ const DonationForm = () => {
         description: "Volunteers will be notified of your generous donation.",
       });
       
-      // Reset form
       setFormData(initialFormData);
       setImageFile(null);
       
