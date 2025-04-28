@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { createDonation } from '@/lib/supabase';
+import { Image, Upload } from 'lucide-react';
 
 interface FormData {
   foodName: string;
@@ -37,10 +38,28 @@ const DonationForm = () => {
   const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setImageFile(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,8 +75,29 @@ const DonationForm = () => {
     }
     
     setIsSubmitting(true);
+    setUploading(true);
     
     try {
+      let imageUrl = null;
+      
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('donations')
+          .upload(filePath, imageFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data } = supabase.storage
+          .from('donations')
+          .getPublicUrl(filePath);
+          
+        imageUrl = data.publicUrl;
+      }
+      
       // Prepare donation data for Supabase
       const donationData = {
         donor_id: user.id,
@@ -70,13 +110,12 @@ const DonationForm = () => {
         contact_name: formData.contactName,
         contact_phone: formData.contactPhone,
         status: 'pending',
+        image_url: imageUrl
       };
       
       const { data, error } = await createDonation(donationData);
       
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       toast({
         title: "Donation submitted!",
@@ -85,6 +124,7 @@ const DonationForm = () => {
       
       // Reset form
       setFormData(initialFormData);
+      setImageFile(null);
       
     } catch (error: any) {
       toast({
@@ -94,6 +134,7 @@ const DonationForm = () => {
       });
     } finally {
       setIsSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -154,6 +195,22 @@ const DonationForm = () => {
                 </div>
               </div>
             ))}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="image">Food Image (Optional)</Label>
+            <div className="flex items-center space-x-2">
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="w-full"
+              />
+              {imageFile && (
+                <Image className="h-6 w-6 text-harvest-sage" />
+              )}
+            </div>
           </div>
           
           <div className="flex justify-end">

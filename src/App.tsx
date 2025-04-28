@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,14 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import About from "./pages/About";
-import DonorDashboard from "./pages/DonorDashboard";
-import VolunteerDashboard from "./pages/VolunteerDashboard";
-import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +36,48 @@ const ProtectedRoute = ({
   }
   
   // User is authenticated and has the right role
+  return <>{children}</>;
+};
+
+// Enhanced ProtectedRoute component that also checks for admin role
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setCheckingAdmin(false);
+        return;
+      }
+      
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+          
+        setIsAdmin(data?.is_admin || false);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user]);
+  
+  if (loading || checkingAdmin) {
+    return null;
+  }
+  
+  if (!user || !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+  
   return <>{children}</>;
 };
 
@@ -117,6 +151,16 @@ const AppRoutes = () => {
             <ProtectedRoute requiredRole="volunteer">
               <VolunteerDashboard />
             </ProtectedRoute>
+          }
+        />
+        
+        {/* Admin route */}
+        <Route 
+          path="/admin" 
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
           }
         />
         

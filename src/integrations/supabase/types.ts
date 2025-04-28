@@ -20,6 +20,7 @@ export type Database = {
           expiry_date: string | null
           food_name: string
           id: string
+          image_url: string | null
           location: string
           quantity: string
           status: string
@@ -35,6 +36,7 @@ export type Database = {
           expiry_date?: string | null
           food_name: string
           id?: string
+          image_url?: string | null
           location: string
           quantity: string
           status?: string
@@ -50,6 +52,7 @@ export type Database = {
           expiry_date?: string | null
           food_name?: string
           id?: string
+          image_url?: string | null
           location?: string
           quantity?: string
           status?: string
@@ -61,18 +64,21 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          is_admin: boolean | null
           updated_at: string | null
           username: string | null
         }
         Insert: {
           created_at?: string | null
           id: string
+          is_admin?: boolean | null
           updated_at?: string | null
           username?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          is_admin?: boolean | null
           updated_at?: string | null
           username?: string | null
         }
