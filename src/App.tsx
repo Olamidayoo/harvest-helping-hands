@@ -8,7 +8,7 @@ import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { supabase } from '@/lib/supabase';
 import AdminDashboard from "./pages/AdminDashboard";
-import Index from "./pages/Index";
+import IndexPage from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import About from "./pages/About";
@@ -120,7 +120,7 @@ const AppRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<IndexPage />} />
         
         {/* Auth routes with redirect if already logged in */}
         <Route 
