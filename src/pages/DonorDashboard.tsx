@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Package, Clock, MapPin, Search, ChevronDown, Plus } from 'lucide-react';
@@ -13,7 +12,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageTransition from '@/components/ui/page-transition';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDonationsByDonor, setupDonationsSubscription } from '@/lib/supabase';
+import { getDonationsByDonor, setupDonationsSubscription, supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 // Helper functions for status display - moved outside component scope to be accessible
