@@ -7,8 +7,11 @@ import { supabase } from '@/lib/supabase';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, User, Check, X, Mail } from 'lucide-react';
+import { Search, User, Check, X, Mail, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -93,6 +96,11 @@ const UserList = () => {
     );
   });
 
+  const getInitials = (username) => {
+    if (!username) return '?';
+    return username.slice(0, 2).toUpperCase();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -106,8 +114,8 @@ const UserList = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-harvest-charcoal">User Management</h2>
-          <p className="text-harvest-charcoal/70">View and manage all users</p>
+          <h2 className="text-2xl font-semibold text-harvest-charcoal mb-1">User Management</h2>
+          <p className="text-harvest-charcoal/70 text-sm">View and manage all users</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -115,14 +123,15 @@ const UserList = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-harvest-charcoal/40" />
             <Input 
               placeholder="Search users..." 
-              className="pl-8" 
+              className="pl-8 bg-white/50 border-harvest-sage/30 focus:border-harvest-sage" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px] bg-white/50 border-harvest-sage/30">
+              <Filter className="h-4 w-4 mr-2 opacity-70" />
               <SelectValue placeholder="Filter users" />
             </SelectTrigger>
             <SelectContent>
@@ -132,11 +141,11 @@ const UserList = () => {
             </SelectContent>
           </Select>
 
-          <div className="flex rounded-md border">
+          <div className="flex rounded-md border border-harvest-sage/30 bg-white/50 overflow-hidden">
             <Button 
               variant="ghost" 
               size="sm"
-              className={`px-3 ${viewType === 'table' ? 'bg-muted' : ''}`}
+              className={`px-3 rounded-none ${viewType === 'table' ? 'bg-harvest-sage/20 text-harvest-charcoal' : ''}`}
               onClick={() => setViewType('table')}
             >
               Table
@@ -144,7 +153,7 @@ const UserList = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              className={`px-3 ${viewType === 'grid' ? 'bg-muted' : ''}`}
+              className={`px-3 rounded-none ${viewType === 'grid' ? 'bg-harvest-sage/20 text-harvest-charcoal' : ''}`}
               onClick={() => setViewType('grid')}
             >
               Grid
@@ -160,82 +169,105 @@ const UserList = () => {
           </CardContent>
         </Card>
       ) : viewType === 'table' ? (
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted">
-              <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead>Admin Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    {user.username || 'Unnamed User'}
-                  </TableCell>
-                  <TableCell>{formatDate(user.created_at)}</TableCell>
-                  <TableCell>
-                    {user.is_admin ? (
-                      <Badge className="bg-green-100 text-green-800 border-green-200 border">
-                        <Check className="w-3 h-3 mr-1" /> Admin
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-harvest-charcoal/70">
-                        <X className="w-3 h-3 mr-1" /> Regular User
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant={user.is_admin ? "destructive" : "default"}
-                      size="sm"
-                      onClick={() => toggleAdmin(user.id, user.is_admin)}
-                    >
-                      {user.is_admin ? "Remove Admin" : "Make Admin"}
-                    </Button>
-                  </TableCell>
+        <Card className="glass overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-harvest-sage/10">
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead>Admin Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id} className="hover:bg-harvest-sage/5">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 bg-harvest-sage/30">
+                          <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{user.username || 'Unnamed User'}</div>
+                          {user.email && <div className="text-xs text-muted-foreground">{user.email}</div>}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(user.created_at)}</TableCell>
+                    <TableCell>
+                      {user.is_admin ? (
+                        <Badge className="bg-green-100 text-green-800 border-green-200 border">
+                          <Check className="w-3 h-3 mr-1" /> Admin
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-harvest-charcoal/70">
+                          <X className="w-3 h-3 mr-1" /> Regular User
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant={user.is_admin ? "destructive" : "default"}
+                        size="sm"
+                        onClick={() => toggleAdmin(user.id, user.is_admin)}
+                        className={cn(
+                          user.is_admin ? "bg-red-100 text-red-800 hover:bg-red-200" : "bg-harvest-sage text-white hover:bg-harvest-sage/90"
+                        )}
+                      >
+                        {user.is_admin ? "Remove Admin" : "Make Admin"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
       ) : (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filteredUsers.map((user) => (
-            <Card key={user.id} className="glass">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-harvest-sage h-12 w-12 rounded-full flex items-center justify-center text-white">
-                    <User className="h-6 w-6" />
+            <Card key={user.id} className="glass overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className="p-0">
+                <div className="bg-gradient-to-r from-harvest-sage/30 to-harvest-sage/10 p-6">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-16 w-16 bg-white/70 border-2 border-white/50 ring-2 ring-harvest-sage/20">
+                      <AvatarFallback className="text-xl">{getInitials(user.username)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-medium text-harvest-charcoal truncate">
+                        {user.username || 'Unnamed User'}
+                      </h3>
+                      <div className="flex items-center text-sm text-harvest-charcoal/70">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Joined {formatDate(user.created_at)}
+                      </div>
+                      {user.email && (
+                        <div className="flex items-center text-sm text-harvest-charcoal/70">
+                          <Mail className="h-3 w-3 mr-1" />
+                          {user.email}
+                        </div>
+                      )}
+                    </div>
+                    {user.is_admin && (
+                      <Badge className="bg-green-100 text-green-800 border-green-200 border">
+                        Admin
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-medium text-harvest-charcoal truncate">
-                      {user.username || 'Unnamed User'}
-                    </h3>
-                    <p className="text-sm text-harvest-charcoal/70">
-                      Joined {formatDate(user.created_at)}
-                    </p>
-                  </div>
-                  {user.is_admin && (
-                    <Badge className="bg-green-100 text-green-800 border-green-200 border">
-                      Admin
-                    </Badge>
-                  )}
                 </div>
                 
-                <div className="mt-6 flex justify-between items-center">
+                <div className="p-4 flex justify-between items-center">
                   <Button
                     variant={user.is_admin ? "destructive" : "default"}
+                    size="sm"
                     onClick={() => toggleAdmin(user.id, user.is_admin)}
+                    className={cn(
+                      "w-full",
+                      user.is_admin ? "bg-red-100 text-red-800 hover:bg-red-200" : "bg-harvest-sage text-white hover:bg-harvest-sage/90"
+                    )}
                   >
                     {user.is_admin ? "Remove Admin" : "Make Admin"}
-                  </Button>
-                  
-                  <Button variant="ghost" size="icon">
-                    <Mail className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -244,7 +276,7 @@ const UserList = () => {
         </div>
       )}
 
-      <div className="flex justify-between items-center pt-4 border-t">
+      <div className="flex justify-between items-center pt-4 border-t border-harvest-sage/10">
         <p className="text-sm text-harvest-charcoal/70">
           Showing {filteredUsers.length} of {users.length} users
         </p>
