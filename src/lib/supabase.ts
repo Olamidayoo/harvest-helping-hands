@@ -7,17 +7,22 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Initialize a single supabase client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Enable real-time updates for donations table
-supabase
-  .channel('public:donations')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'donations'
-  }, (payload) => {
-    console.log('Change received!', payload);
-  })
-  .subscribe();
+// Function to setup real-time subscription
+export const setupDonationsSubscription = (callback: (payload: any) => void) => {
+  const channel = supabase
+    .channel('public:donations')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'donations'
+    }, (payload) => {
+      console.log('Change received!', payload);
+      callback(payload);
+    })
+    .subscribe();
+
+  return channel;
+}
 
 // Auth helper functions
 export const signUp = async (email: string, password: string) => {
@@ -129,4 +134,23 @@ export const updateDonationStatus = async (id: string, status: string, volunteer
     .select();
   
   return { data, error };
+};
+
+// Check if a user is an admin
+export const checkIsAdmin = async (userId: string) => {
+  if (!userId) return { isAdmin: false };
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', userId)
+      .single();
+    
+    if (error) throw error;
+    return { isAdmin: data?.is_admin || false };
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return { isAdmin: false };
+  }
 };

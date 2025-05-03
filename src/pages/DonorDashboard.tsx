@@ -13,7 +13,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageTransition from '@/components/ui/page-transition';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDonationsByDonor } from '@/lib/supabase';
+import { getDonationsByDonor, setupDonationsSubscription } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 // Helper functions for status display - moved outside component scope to be accessible
@@ -58,6 +58,7 @@ interface Donation {
   available_time?: string;
   contact_name: string;
   contact_phone: string;
+  image_url?: string;
 }
 
 // DonationItem component
@@ -82,6 +83,12 @@ const DonationItem: React.FC<DonationItemProps> = ({ donation }) => {
       <Card className="glass h-full overflow-hidden hover:shadow-md transition-all duration-300">
         <CardContent className="p-0">
           <div className="p-6">
+            {donation.image_url && (
+              <div className="mb-4 w-full h-40 overflow-hidden rounded-md">
+                <img src={donation.image_url} alt={donation.food_name} className="w-full h-full object-cover" />
+              </div>
+            )}
+            
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-medium text-harvest-charcoal">{donation.food_name}</h3>
               <Badge className={`${getStatusColor(donation.status)}`}>
@@ -132,34 +139,71 @@ const DonorDashboard = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Function to fetch donations
+  const fetchDonations = async () => {
+    try {
+      setIsLoading(true);
+      
+      if (!user) return;
+      
+      const { data, error } = await getDonationsByDonor(user.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setDonations(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching donations",
+        description: error.message || "Failed to load your donations",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Fetch donations for this donor
   useEffect(() => {
-    const fetchDonations = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (!user) return;
-        
-        const { data, error } = await getDonationsByDonor(user.id);
-        
-        if (error) {
-          throw error;
-        }
-        
-        setDonations(data || []);
-      } catch (error: any) {
-        toast({
-          title: "Error fetching donations",
-          description: error.message || "Failed to load your donations",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchDonations();
+    if (user) {
+      fetchDonations();
+    }
   }, [user, toast]);
+  
+  // Setup real-time subscription
+  useEffect(() => {
+    if (!user) return;
+    
+    const channel = setupDonationsSubscription((payload) => {
+      console.log("Donation changed:", payload);
+      // Only refetch if the change is relevant to this user
+      if (payload.new && payload.new.donor_id === user.id) {
+        fetchDonations();
+        
+        if (payload.eventType === "INSERT") {
+          toast({
+            title: "Donation Added",
+            description: "Your donation was successfully added",
+          });
+        }
+      }
+    });
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, toast]);
+
+  // Handle donation form submission
+  const handleDonationSubmitted = () => {
+    setShowDonationForm(false);
+    fetchDonations();
+    toast({
+      title: "Success!",
+      description: "Your donation was submitted successfully",
+    });
+  };
   
   const filteredDonations = donations.filter(donation => {
     if (searchQuery === '') return true;
@@ -167,7 +211,7 @@ const DonorDashboard = () => {
     const searchLower = searchQuery.toLowerCase();
     return (
       donation.food_name.toLowerCase().includes(searchLower) ||
-      donation.description.toLowerCase().includes(searchLower) ||
+      donation.description?.toLowerCase().includes(searchLower) ||
       donation.location.toLowerCase().includes(searchLower)
     );
   });
@@ -209,7 +253,7 @@ const DonorDashboard = () => {
               transition={{ duration: 0.3 }}
               className="mb-10"
             >
-              <DonationForm />
+              <DonationForm onDonationSubmitted={handleDonationSubmitted} />
             </motion.div>
           )}
           

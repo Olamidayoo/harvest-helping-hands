@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -6,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { supabase } from '@/lib/supabase';
+import { supabase, checkIsAdmin } from '@/lib/supabase';
 import AdminDashboard from "./pages/AdminDashboard";
 import IndexPage from "./pages/Index";
 import Login from "./pages/Login";
@@ -48,7 +49,7 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Enhanced ProtectedRoute component that also checks for admin role
+// Enhanced AdminRoute component that checks for admin role
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -62,13 +63,8 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
       }
       
       try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
-          
-        setIsAdmin(data?.is_admin || false);
+        const { isAdmin } = await checkIsAdmin(user.id);
+        setIsAdmin(isAdmin);
       } catch (error) {
         console.error('Error checking admin status:', error);
       } finally {
@@ -80,7 +76,9 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }, [user]);
   
   if (loading || checkingAdmin) {
-    return null;
+    return <div className="h-screen flex items-center justify-center">
+      <div className="text-lg text-harvest-sage">Loading...</div>
+    </div>;
   }
   
   if (!user || !isAdmin) {

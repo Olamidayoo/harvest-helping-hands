@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, Clock, Package, Phone, Send, Image } from 'lucide-react';
@@ -29,7 +28,11 @@ const donationSchema = z.object({
 
 type FormData = z.infer<typeof donationSchema>;
 
-const DonationForm = () => {
+interface DonationFormProps {
+  onDonationSubmitted?: () => void;
+}
+
+const DonationForm: React.FC<DonationFormProps> = ({ onDonationSubmitted }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,6 +128,11 @@ const DonationForm = () => {
       
       form.reset();
       setImageFile(null);
+      
+      // Call the callback if provided
+      if (onDonationSubmitted) {
+        onDonationSubmitted();
+      }
       
     } catch (error: any) {
       toast({
