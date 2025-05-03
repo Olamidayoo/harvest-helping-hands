@@ -9,36 +9,46 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageTransition from '@/components/ui/page-transition';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import DonationList from '@/components/admin/DonationList';
 import UserList from '@/components/admin/UserList';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('donations');
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Only check admin status if user is loaded and authenticated
+    if (authLoading) {
+      return; // Wait for auth to initialize
+    }
+    
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to access the admin dashboard",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+    
     const checkAdminStatus = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setLoading(false);
-          setIsAdmin(false);
-          toast({
-            title: "Authentication error",
-            description: "You need to be logged in to access this page",
-            variant: "destructive"
-          });
-          return;
-        }
+        console.log("Checking admin status for user:", user.id);
         
         const { data, error } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', user.id)
           .single();
+        
+        console.log("Admin check result:", data, error);
         
         if (error) {
           console.error('Error checking admin status:', error);
@@ -48,16 +58,19 @@ const AdminDashboard = () => {
             variant: "destructive"
           });
           setIsAdmin(false);
-        } else {
-          setIsAdmin(data?.is_admin || false);
-          
-          if (!data?.is_admin) {
-            toast({
-              title: "Access denied",
-              description: "You don't have admin privileges",
-              variant: "destructive"
-            });
-          }
+          setLoading(false);
+          return;
+        }
+        
+        const adminStatus = !!data?.is_admin;
+        setIsAdmin(adminStatus);
+        
+        if (!adminStatus) {
+          toast({
+            title: "Access denied",
+            description: "You don't have admin privileges",
+            variant: "destructive"
+          });
         }
       } catch (error: any) {
         console.error('Admin check error:', error);
@@ -73,14 +86,35 @@ const AdminDashboard = () => {
     };
     
     checkAdminStatus();
-  }, [toast]);
+  }, [user, authLoading, toast, navigate]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-harvest-sage animate-spin" />
         <span className="ml-2 text-lg text-harvest-sage">Checking admin privileges...</span>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageTransition>
+        <Navbar />
+        <main className="min-h-screen pt-24 pb-16 bg-harvest-cream/30">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <Card className="glass">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-semibold text-harvest-charcoal mb-4">Authentication Required</h2>
+                <p className="text-harvest-charcoal/80">
+                  You must be logged in to access the admin dashboard.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </PageTransition>
     );
   }
 
