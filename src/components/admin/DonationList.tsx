@@ -5,27 +5,46 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/lib/supabase';
-import { Package, MapPin, Clock } from 'lucide-react';
+import { Package, MapPin, Clock, User, Phone, Calendar, Trash } from 'lucide-react';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 const DonationList = () => {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewType, setViewType] = useState('grid'); // 'grid' or 'table'
+  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'completed'
   const { toast } = useToast();
 
   useEffect(() => {
     fetchDonations();
-  }, []);
+  }, [filter]);
 
   const fetchDonations = async () => {
     try {
-      const { data, error } = await supabase
+      // Create query builder
+      let query = supabase
         .from('donations')
-        .select('*, profiles!donations_donor_id_fkey(username)')
-        .order('created_at', { ascending: false });
+        .select(`
+          *,
+          donor:donor_id(username)
+        `);
+
+      // Apply filter if not 'all'
+      if (filter !== 'all') {
+        query = query.eq('status', filter);
+      }
+
+      // Execute query with ordering
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log("Fetched donations:", data);
       setDonations(data || []);
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error fetching donations:', error);
       toast({
         title: "Error fetching donations",
         description: error.message,
@@ -36,7 +55,7 @@ const DonationList = () => {
     }
   };
 
-  const handleStatusChange = async (donationId: string, newStatus: string) => {
+  const handleStatusChange = async (donationId, newStatus) => {
     try {
       const { error } = await supabase
         .from('donations')
@@ -51,7 +70,7 @@ const DonationList = () => {
       });
 
       fetchDonations();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error updating status",
         description: error.message,
@@ -60,75 +79,237 @@ const DonationList = () => {
     }
   };
 
+  const handleDeleteDonation = async (donationId) => {
+    try {
+      const { error } = await supabase
+        .from('donations')
+        .delete()
+        .eq('id', donationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Donation deleted",
+        description: "Donation has been removed successfully"
+      });
+
+      fetchDonations();
+    } catch (error) {
+      toast({
+        title: "Error deleting donation",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    try {
+      return new Date(dateStr).toLocaleDateString();
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-harvest-sage"></div>
+        <span className="ml-2 text-harvest-sage">Loading donations...</span>
+      </div>
+    );
   }
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   return (
-    <div className="grid gap-4">
-      {donations.map((donation: any) => (
-        <Card key={donation.id} className="glass">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-medium text-harvest-charcoal">{donation.food_name}</h3>
-                <p className="text-sm text-harvest-charcoal/70">{donation.description}</p>
-              </div>
-              <Badge>{donation.status}</Badge>
-            </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-harvest-charcoal">Donation Management</h2>
+          <p className="text-harvest-charcoal/70">View and manage all food donations</p>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Donations</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <div className="flex rounded-md border">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className={`px-3 ${viewType === 'grid' ? 'bg-muted' : ''}`}
+              onClick={() => setViewType('grid')}
+            >
+              Grid
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className={`px-3 ${viewType === 'table' ? 'bg-muted' : ''}`}
+              onClick={() => setViewType('table')}
+            >
+              Table
+            </Button>
+          </div>
+        </div>
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center text-sm">
-                  <Package className="w-4 h-4 text-harvest-sage mr-2" />
-                  <span>{donation.quantity}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <MapPin className="w-4 h-4 text-harvest-sage mr-2" />
-                  <span>{donation.location}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                  <Clock className="w-4 h-4 text-harvest-sage mr-2" />
-                  <span>{new Date(donation.created_at).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm">
-                  <strong>Donor:</strong> {donation.profiles?.username || 'Anonymous'}
-                </p>
-                <p className="text-sm">
-                  <strong>Contact:</strong> {donation.contact_name} ({donation.contact_phone})
-                </p>
-                {donation.image_url && (
-                  <img 
-                    src={donation.image_url} 
-                    alt="Donation" 
-                    className="w-32 h-32 object-cover rounded"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4 space-x-2">
-              <Button 
-                size="sm" 
-                variant={donation.status === 'pending' ? 'default' : 'outline'}
-                onClick={() => handleStatusChange(donation.id, 'pending')}
-              >
-                Mark Pending
-              </Button>
-              <Button 
-                size="sm" 
-                variant={donation.status === 'completed' ? 'default' : 'outline'}
-                onClick={() => handleStatusChange(donation.id, 'completed')}
-              >
-                Mark Completed
-              </Button>
-            </div>
+      {donations.length === 0 ? (
+        <Card className="glass">
+          <CardContent className="p-8 text-center">
+            <p className="text-harvest-charcoal/70">No donations found.</p>
           </CardContent>
         </Card>
-      ))}
+      ) : viewType === 'grid' ? (
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {donations.map((donation) => (
+            <Card key={donation.id} className="glass overflow-hidden">
+              <CardContent className="p-0">
+                {donation.image_url && (
+                  <div className="aspect-video w-full overflow-hidden bg-gray-100">
+                    <img 
+                      src={donation.image_url} 
+                      alt={donation.food_name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-medium text-harvest-charcoal">{donation.food_name}</h3>
+                      <p className="text-sm text-harvest-charcoal/70">{donation.description}</p>
+                    </div>
+                    <Badge className={`${getStatusColor(donation.status)} border`}>{donation.status}</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center text-sm">
+                        <Package className="w-4 h-4 text-harvest-sage mr-2" />
+                        <span>{donation.quantity}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <MapPin className="w-4 h-4 text-harvest-sage mr-2" />
+                        <span>{donation.location}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Clock className="w-4 h-4 text-harvest-sage mr-2" />
+                        <span>{formatDate(donation.created_at)}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <User className="w-4 h-4 text-harvest-sage mr-2" />
+                        <span>{donation.donor?.username || 'Anonymous'}</span>
+                      </div>
+                      <div className="flex items-center text-sm">
+                        <Phone className="w-4 h-4 text-harvest-sage mr-2" />
+                        <span>{donation.contact_name} ({donation.contact_phone})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button 
+                      size="sm" 
+                      variant={donation.status === 'pending' ? 'default' : 'outline'}
+                      onClick={() => handleStatusChange(donation.id, 'pending')}
+                    >
+                      Mark Pending
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant={donation.status === 'completed' ? 'default' : 'outline'}
+                      onClick={() => handleStatusChange(donation.id, 'completed')}
+                    >
+                      Mark Completed
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteDonation(donation.id)}
+                    >
+                      <Trash className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted">
+              <TableRow>
+                <TableHead>Food Item</TableHead>
+                <TableHead>Donor</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {donations.map((donation) => (
+                <TableRow key={donation.id}>
+                  <TableCell className="font-medium">
+                    {donation.food_name}
+                    <p className="text-xs text-muted-foreground mt-1">{donation.quantity}</p>
+                  </TableCell>
+                  <TableCell>{donation.donor?.username || 'Anonymous'}</TableCell>
+                  <TableCell>{donation.location}</TableCell>
+                  <TableCell>{formatDate(donation.created_at)}</TableCell>
+                  <TableCell>
+                    <Badge className={`${getStatusColor(donation.status)} border`}>{donation.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={donation.status}
+                        onValueChange={(value) => handleStatusChange(donation.id, value)}
+                      >
+                        <SelectTrigger className="h-8 w-[110px]">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="h-8 w-8"
+                        onClick={() => handleDeleteDonation(donation.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };
