@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { supabase, checkIsAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import AdminDashboard from "./pages/AdminDashboard";
 import IndexPage from "./pages/Index";
 import Login from "./pages/Login";
@@ -51,40 +51,8 @@ const ProtectedRoute = ({
 
 // Enhanced AdminRoute component that checks for admin role
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAdmin, setCheckingAdmin] = useState(true);
-  
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) {
-        setCheckingAdmin(false);
-        return;
-      }
-      
-      try {
-        const { isAdmin } = await checkIsAdmin(user.id);
-        setIsAdmin(isAdmin);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-      } finally {
-        setCheckingAdmin(false);
-      }
-    };
-    
-    checkAdminStatus();
-  }, [user]);
-  
-  if (loading || checkingAdmin) {
-    return <div className="h-screen flex items-center justify-center">
-      <div className="text-lg text-harvest-sage">Loading...</div>
-    </div>;
-  }
-  
-  if (!user || !isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-  
+  // We don't need the admin check logic here anymore
+  // The AdminDashboard component now handles its own access control
   return <>{children}</>;
 };
 
@@ -161,15 +129,8 @@ const AppRoutes = () => {
           }
         />
         
-        {/* Admin route */}
-        <Route 
-          path="/admin" 
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
+        {/* Admin route - simplified, admin check moved to AdminDashboard component */}
+        <Route path="/admin" element={<AdminDashboard />} />
         
         {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
