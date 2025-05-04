@@ -64,8 +64,8 @@ const ProfileSettings = () => {
     >
       <Card className="w-full max-w-md mx-auto glass">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold text-harvest-charcoal">Profile Settings</CardTitle>
-          <CardDescription className="text-harvest-charcoal/70">
+          <CardTitle className="text-2xl font-semibold text-fooddrop-charcoal">Profile Settings</CardTitle>
+          <CardDescription className="text-fooddrop-charcoal/70">
             Update your profile information
           </CardDescription>
         </CardHeader>
@@ -80,7 +80,7 @@ const ProfileSettings = () => {
                 disabled 
                 className="bg-gray-50"
               />
-              <p className="text-xs text-harvest-charcoal/60">Your email address cannot be changed</p>
+              <p className="text-xs text-fooddrop-charcoal/60">Your email address cannot be changed</p>
             </div>
             
             <div className="space-y-2">
@@ -92,12 +92,12 @@ const ProfileSettings = () => {
                 placeholder="Enter your username"
                 required
               />
-              <p className="text-xs text-harvest-charcoal/60">This will be displayed to other users</p>
+              <p className="text-xs text-fooddrop-charcoal/60">This will be displayed to other users</p>
             </div>
             
             <Button 
               type="submit" 
-              className="w-full bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+              className="w-full bg-fooddrop-sage hover:bg-fooddrop-sage/90 text-white"
               disabled={isUpdating}
             >
               {isUpdating ? 'Updating...' : 'Save Changes'}

@@ -101,7 +101,7 @@ const SignupForm = () => {
     >
       <Card className="w-full max-w-md mx-auto glass">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-harvest-charcoal">
+          <CardTitle className="text-2xl font-bold text-center text-fooddrop-charcoal">
             Create an Account
           </CardTitle>
           <CardDescription className="text-center">
@@ -115,20 +115,20 @@ const SignupForm = () => {
             className="w-full pb-4"
           >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="donor" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
+              <TabsTrigger value="donor" className="data-[state=active]:bg-fooddrop-sage data-[state=active]:text-white">
                 Join as a Donor
               </TabsTrigger>
-              <TabsTrigger value="volunteer" className="data-[state=active]:bg-harvest-sage data-[state=active]:text-white">
+              <TabsTrigger value="volunteer" className="data-[state=active]:bg-fooddrop-sage data-[state=active]:text-white">
                 Join as a Volunteer
               </TabsTrigger>
             </TabsList>
             <TabsContent value="donor" className="mt-4">
-              <p className="text-sm text-harvest-charcoal/70 mb-4">
+              <p className="text-sm text-fooddrop-charcoal/70 mb-4">
                 As a donor, you can list excess food that would otherwise go to waste.
               </p>
             </TabsContent>
             <TabsContent value="volunteer" className="mt-4">
-              <p className="text-sm text-harvest-charcoal/70 mb-4">
+              <p className="text-sm text-fooddrop-charcoal/70 mb-4">
                 As a volunteer, you can pick up and distribute food to those in need.
               </p>
             </TabsContent>
@@ -193,7 +193,7 @@ const SignupForm = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+                className="w-full bg-fooddrop-sage hover:bg-fooddrop-sage/90 text-white"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Creating Account...' : 'Sign Up'}
@@ -202,9 +202,9 @@ const SignupForm = () => {
           </Form>
         </CardContent>
         <CardFooter>
-          <p className="text-center text-sm text-harvest-charcoal/70 w-full">
+          <p className="text-center text-sm text-fooddrop-charcoal/70 w-full">
             Already have an account?{' '}
-            <Link to="/login" className="text-harvest-sage hover:underline font-medium">
+            <Link to="/login" className="text-fooddrop-sage hover:underline font-medium">
               Log in
             </Link>
           </p>

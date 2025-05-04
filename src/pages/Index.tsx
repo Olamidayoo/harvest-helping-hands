@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -64,7 +63,7 @@ const Index = () => {
       <main>
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center pt-20">
-          <div className="absolute inset-0 z-0 bg-gradient-to-b from-harvest-cream to-white"></div>
+          <div className="absolute inset-0 z-0 bg-gradient-to-b from-fooddrop-cream to-white"></div>
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-20">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <motion.div
@@ -78,7 +77,7 @@ const Index = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.2 }}
                 >
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-harvest-charcoal leading-tight">
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-fooddrop-charcoal leading-tight">
                     Connecting food surplus with those who need it most
                   </h1>
                 </motion.div>
@@ -88,8 +87,8 @@ const Index = () => {
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.4, delay: 0.4 }}
                 >
-                  <p className="text-lg text-harvest-charcoal/70 max-w-lg">
-                    Harvest is a platform that connects food donors with volunteers to combat hunger and reduce waste in our communities.
+                  <p className="text-lg text-fooddrop-charcoal/70 max-w-lg">
+                    FoodDrop is a platform that connects food donors with volunteers to combat hunger and reduce waste in our communities.
                   </p>
                 </motion.div>
                 
@@ -101,7 +100,7 @@ const Index = () => {
                 >
                   <Button 
                     asChild
-                    className="bg-harvest-sage hover:bg-harvest-sage/90 text-white px-6 py-6 rounded-md shadow-sm"
+                    className="bg-fooddrop-sage hover:bg-fooddrop-sage/90 text-white px-6 py-6 rounded-md shadow-sm"
                   >
                     <Link to="/donor">
                       <span>I Want to Donate</span>
@@ -112,7 +111,7 @@ const Index = () => {
                   <Button 
                     asChild
                     variant="outline"
-                    className="border-harvest-sage text-harvest-charcoal hover:bg-harvest-sage/10 px-6 py-6 rounded-md"
+                    className="border-fooddrop-sage text-fooddrop-charcoal hover:bg-fooddrop-sage/10 px-6 py-6 rounded-md"
                   >
                     <Link to="/volunteer">
                       <span>I Want to Volunteer</span>
@@ -150,8 +149,8 @@ const Index = () => {
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
               >
-                <h2 className="text-3xl md:text-4xl font-medium text-harvest-charcoal mb-4">How Harvest Works</h2>
-                <p className="text-harvest-charcoal/70 max-w-2xl mx-auto">
+                <h2 className="text-3xl md:text-4xl font-medium text-fooddrop-charcoal mb-4">How FoodDrop Works</h2>
+                <p className="text-fooddrop-charcoal/70 max-w-2xl mx-auto">
                   We make it simple to donate surplus food and volunteer to help those in need.
                 </p>
               </motion.div>
@@ -165,13 +164,13 @@ const Index = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true, margin: "-50px" }}
-                  className="p-6 glass rounded-xl border border-harvest-sage/20"
+                  className="p-6 glass rounded-xl border border-fooddrop-sage/20"
                 >
-                  <div className="h-12 w-12 bg-harvest-sage/10 rounded-full flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-harvest-sage" />
+                  <div className="h-12 w-12 bg-fooddrop-sage/10 rounded-full flex items-center justify-center mb-4">
+                    <feature.icon className="h-6 w-6 text-fooddrop-sage" />
                   </div>
-                  <h3 className="text-xl font-medium text-harvest-charcoal mb-2">{feature.title}</h3>
-                  <p className="text-harvest-charcoal/70">{feature.description}</p>
+                  <h3 className="text-xl font-medium text-fooddrop-charcoal mb-2">{feature.title}</h3>
+                  <p className="text-fooddrop-charcoal/70">{feature.description}</p>
                 </motion.div>
               ))}
             </div>
@@ -182,7 +181,7 @@ const Index = () => {
         <Testimonials testimonials={testimonials} />
         
         {/* CTA Section */}
-        <section className="py-20 bg-harvest-sage/10">
+        <section className="py-20 bg-fooddrop-sage/10">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto text-center">
               <motion.div
@@ -192,15 +191,15 @@ const Index = () => {
                 viewport={{ once: true }}
                 className="space-y-6"
               >
-                <h2 className="text-3xl md:text-4xl font-medium text-harvest-charcoal">Ready to make a difference?</h2>
-                <p className="text-lg text-harvest-charcoal/70">
+                <h2 className="text-3xl md:text-4xl font-medium text-fooddrop-charcoal">Ready to make a difference?</h2>
+                <p className="text-lg text-fooddrop-charcoal/70">
                   Join our community of donors and volunteers working together to reduce food waste and feed those in need.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-4 justify-center">
                   <Button 
                     asChild
-                    className="bg-harvest-sage hover:bg-harvest-sage/90 text-white px-6 py-6 rounded-md shadow-sm"
+                    className="bg-fooddrop-sage hover:bg-fooddrop-sage/90 text-white px-6 py-6 rounded-md shadow-sm"
                   >
                     <Link to="/donor">
                       <span>Start Donating</span>
@@ -211,7 +210,7 @@ const Index = () => {
                   <Button 
                     asChild
                     variant="outline"
-                    className="border-harvest-sage text-harvest-charcoal hover:bg-harvest-sage/10 px-6 py-6 rounded-md"
+                    className="border-fooddrop-sage text-fooddrop-charcoal hover:bg-fooddrop-sage/10 px-6 py-6 rounded-md"
                   >
                     <Link to="/volunteer">
                       <span>Become a Volunteer</span>

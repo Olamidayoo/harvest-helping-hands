@@ -44,7 +44,7 @@ const LoginForm = () => {
       
       toast({
         title: "Login successful",
-        description: `Welcome back to Harvest!`,
+        description: `Welcome back to FoodDrop!`,
       });
       
       // Navigate to the appropriate dashboard
@@ -65,7 +65,7 @@ const LoginForm = () => {
   return (
     <Card className="w-full max-w-md mx-auto glass">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-semibold text-harvest-charcoal">Login</CardTitle>
+        <CardTitle className="text-2xl font-semibold text-fooddrop-charcoal">Login</CardTitle>
         <CardDescription>Enter your email and password to access your account</CardDescription>
       </CardHeader>
       <CardContent>
@@ -79,7 +79,7 @@ const LoginForm = () => {
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-harvest-charcoal/50 h-4 w-4" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-fooddrop-charcoal/50 h-4 w-4" />
               <Input
                 id="email"
                 type="email"
@@ -95,7 +95,7 @@ const LoginForm = () => {
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-harvest-charcoal/50 h-4 w-4" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-fooddrop-charcoal/50 h-4 w-4" />
               <Input
                 id="password"
                 type="password"
@@ -114,7 +114,7 @@ const LoginForm = () => {
               <Button
                 type="button"
                 variant={role === 'donor' ? 'default' : 'outline'}
-                className={role === 'donor' ? 'bg-harvest-sage' : 'border-harvest-sage/50'}
+                className={role === 'donor' ? 'bg-fooddrop-sage' : 'border-fooddrop-sage/50'}
                 onClick={() => setRole('donor')}
               >
                 Donor
@@ -122,7 +122,7 @@ const LoginForm = () => {
               <Button
                 type="button"
                 variant={role === 'volunteer' ? 'default' : 'outline'}
-                className={role === 'volunteer' ? 'bg-harvest-sage' : 'border-harvest-sage/50'}
+                className={role === 'volunteer' ? 'bg-fooddrop-sage' : 'border-fooddrop-sage/50'}
                 onClick={() => setRole('volunteer')}
               >
                 Volunteer
@@ -132,7 +132,7 @@ const LoginForm = () => {
           
           <Button 
             type="submit" 
-            className="w-full bg-harvest-sage hover:bg-harvest-sage/90"
+            className="w-full bg-fooddrop-sage hover:bg-fooddrop-sage/90"
             disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : (
@@ -145,9 +145,9 @@ const LoginForm = () => {
         </motion.form>
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
-        <div className="text-sm text-center text-harvest-charcoal/70">
+        <div className="text-sm text-center text-fooddrop-charcoal/70">
           Don't have an account yet?{' '}
-          <Button variant="link" className="p-0 h-auto text-harvest-sage" onClick={() => navigate('/signup')}>
+          <Button variant="link" className="p-0 h-auto text-fooddrop-sage" onClick={() => navigate('/signup')}>
             Sign up
           </Button>
         </div>

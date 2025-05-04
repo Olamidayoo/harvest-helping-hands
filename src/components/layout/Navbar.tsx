@@ -135,7 +135,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           <Link 
             to="/" 
-            className="flex items-center space-x-2 text-2xl font-semibold text-harvest-charcoal"
+            className="flex items-center space-x-2 text-2xl font-semibold text-fooddrop-charcoal"
           >
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
@@ -143,7 +143,7 @@ const Navbar = () => {
               transition={{ duration: 0.4 }}
               className="flex items-center"
             >
-              <span className="text-harvest-sage font-bold">harvest</span>
+              <span className="text-fooddrop-sage font-bold">FoodDrop</span>
             </motion.div>
           </Link>
 
@@ -156,7 +156,7 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="bg-harvest-sage/10 border-harvest-sage/20 text-harvest-sage hover:bg-harvest-sage/20"
+                    className="bg-fooddrop-sage/10 border-fooddrop-sage/20 text-fooddrop-sage hover:bg-fooddrop-sage/20"
                   >
                     <User className="h-4 w-4 mr-2" />
                     {profile ? profile.username : (userRole === 'donor' ? 'Donor' : 'Volunteer')}
@@ -196,13 +196,13 @@ const Navbar = () => {
               <div className="flex space-x-3">
                 <Button 
                   variant="outline"
-                  className="border-harvest-sage text-harvest-sage hover:bg-harvest-sage/10"
+                  className="border-fooddrop-sage text-fooddrop-sage hover:bg-fooddrop-sage/10"
                   asChild
                 >
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button 
-                  className="bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+                  className="bg-fooddrop-sage hover:bg-fooddrop-sage/90 text-white"
                   asChild
                 >
                   <Link to="/signup">Sign Up</Link>
@@ -219,7 +219,7 @@ const Navbar = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="bg-harvest-sage/10 border-harvest-sage/20 text-harvest-sage hover:bg-harvest-sage/20"
+                    className="bg-fooddrop-sage/10 border-fooddrop-sage/20 text-fooddrop-sage hover:bg-fooddrop-sage/20"
                   >
                     <User className="h-4 w-4" />
                   </Button>
@@ -285,16 +285,16 @@ const Navbar = () => {
             <NavLinks isOnDashboard={isOnDashboard} />
             
             {!user && (
-              <div className="flex flex-col space-y-2 pt-2 border-t border-harvest-sage/10">
+              <div className="flex flex-col space-y-2 pt-2 border-t border-fooddrop-sage/10">
                 <Button 
                   variant="outline"
-                  className="w-full border-harvest-sage text-harvest-sage hover:bg-harvest-sage/10"
+                  className="w-full border-fooddrop-sage text-fooddrop-sage hover:bg-fooddrop-sage/10"
                   asChild
                 >
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button 
-                  className="w-full bg-harvest-sage hover:bg-harvest-sage/90 text-white"
+                  className="w-full bg-fooddrop-sage hover:bg-fooddrop-sage/90 text-white"
                   asChild
                 >
                   <Link to="/signup">Sign Up</Link>
