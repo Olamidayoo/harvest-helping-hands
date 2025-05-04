@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,12 @@ import { supabase } from '@/lib/supabase';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Search, User, Check, X, Mail, Filter } from 'lucide-react';
+import { Search, User, Check, X, Mail, Filter, Calendar as CalendarIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -141,24 +141,14 @@ const UserList = () => {
             </SelectContent>
           </Select>
 
-          <div className="flex rounded-md border border-harvest-sage/30 bg-white/50 overflow-hidden">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className={`px-3 rounded-none ${viewType === 'table' ? 'bg-harvest-sage/20 text-harvest-charcoal' : ''}`}
-              onClick={() => setViewType('table')}
-            >
+          <ToggleGroup type="single" value={viewType} onValueChange={(value) => value && setViewType(value)}>
+            <ToggleGroupItem value="table" aria-label="Table view">
               Table
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className={`px-3 rounded-none ${viewType === 'grid' ? 'bg-harvest-sage/20 text-harvest-charcoal' : ''}`}
-              onClick={() => setViewType('grid')}
-            >
+            </ToggleGroupItem>
+            <ToggleGroupItem value="grid" aria-label="Grid view">
               Grid
-            </Button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
@@ -239,7 +229,7 @@ const UserList = () => {
                         {user.username || 'Unnamed User'}
                       </h3>
                       <div className="flex items-center text-sm text-harvest-charcoal/70">
-                        <Calendar className="h-3 w-3 mr-1" />
+                        <CalendarIcon className="h-3 w-3 mr-1" />
                         Joined {formatDate(user.created_at)}
                       </div>
                       {user.email && (

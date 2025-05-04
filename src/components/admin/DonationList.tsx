@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/lib/supabase';
-import { Package, MapPin, Clock, User, Phone, Calendar, Trash, Filter, ChevronDown, ChevronUp, LayoutGrid, LayoutList } from 'lucide-react';
+import { Package, MapPin, Clock, User, Phone, Calendar, Trash, Filter, ChevronDown, ChevronUp, LayoutGrid, LayoutList, Search } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
@@ -13,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const DonationList = () => {
   const [donations, setDonations] = useState([]);
@@ -240,24 +240,14 @@ const DonationList = () => {
             </SelectContent>
           </Select>
           
-          <div className="flex rounded-md border border-harvest-sage/30 bg-white/50 overflow-hidden">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className={`px-3 rounded-none ${viewType === 'grid' ? 'bg-harvest-sage/20 text-harvest-charcoal' : ''}`}
-              onClick={() => setViewType('grid')}
-            >
+          <ToggleGroup type="single" value={viewType} onValueChange={(value) => value && setViewType(value)}>
+            <ToggleGroupItem value="grid" aria-label="Grid view">
               <LayoutGrid className="h-4 w-4 mr-1" /> Grid
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className={`px-3 rounded-none ${viewType === 'table' ? 'bg-harvest-sage/20 text-harvest-charcoal' : ''}`}
-              onClick={() => setViewType('table')}
-            >
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table view">
               <LayoutList className="h-4 w-4 mr-1" /> Table
-            </Button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
